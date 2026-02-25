@@ -2,7 +2,13 @@ from typing import List, Tuple, Optional, Dict
 import os
 from document_processor import DocumentProcessor
 from vector_store import VectorStore
-from ai_generator import AIGenerator
+
+from config import config as _config
+if _config.AI_PROVIDER == "bedrock":
+    from ai_generator_aws import AIGenerator
+else:
+    from ai_generator import AIGenerator
+
 from session_manager import SessionManager
 from search_tools import ToolManager, CourseSearchTool
 from models import Course, Lesson, CourseChunk
@@ -16,7 +22,10 @@ class RAGSystem:
         # Initialize core components
         self.document_processor = DocumentProcessor(config.CHUNK_SIZE, config.CHUNK_OVERLAP)
         self.vector_store = VectorStore(config.CHROMA_PATH, config.EMBEDDING_MODEL, config.MAX_RESULTS)
-        self.ai_generator = AIGenerator(config.ANTHROPIC_API_KEY, config.ANTHROPIC_MODEL)
+        if config.AI_PROVIDER == "bedrock":
+            self.ai_generator = AIGenerator(config.BEDROCK_MODEL, config.AWS_REGION)
+        else:
+            self.ai_generator = AIGenerator(config.ANTHROPIC_API_KEY, config.ANTHROPIC_MODEL)
         self.session_manager = SessionManager(config.MAX_HISTORY)
         
         # Initialize search tools
@@ -119,6 +128,7 @@ class RAGSystem:
             history = self.session_manager.get_conversation_history(session_id)
         
         # Generate response using AI with tools
+        print("# Generate response using AI with tools")
         response = self.ai_generator.generate_response(
             query=prompt,
             conversation_history=history,
