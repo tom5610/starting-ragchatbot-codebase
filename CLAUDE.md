@@ -25,12 +25,17 @@ There are no tests or linter configurations in this project.
 
 ## Environment
 
-Requires a `.env` file in the project root:
+Requires a `.env` file in the project root. All configuration is centralised in `backend/config.py` as a `Config` dataclass; most values have defaults but some come from env vars:
+
 ```
-ANTHROPIC_API_KEY=your-anthropic-api-key-here
+ANTHROPIC_API_KEY=your-anthropic-api-key-here   # required for Anthropic provider
+AI_PROVIDER=anthropic                            # "anthropic" (default) or "bedrock"
+AWS_REGION=us-east-1                             # only needed when AI_PROVIDER=bedrock
 ```
 
 The server loads documents from `../docs` (relative to `backend/`) on startup and persists vectors to `backend/chroma_db/`. ChromaDB is skipped for courses already present — delete `backend/chroma_db/` to force a full reload.
+
+Only `.txt` documents are reliably supported — `DocumentProcessor.read_file()` reads files as plain UTF-8 text. The extension filter in `add_course_folder` also accepts `.pdf` and `.docx` but there is no binary parsing logic for those formats.
 
 ## Architecture
 
@@ -71,4 +76,4 @@ Lesson Link: <url>
 Chunks are sentence-aware, 800 chars with 100-char overlap. The first chunk of each lesson is prefixed with `"Lesson N content: "`.
 
 **Amazon Bedrock alternative:**
-`backend/ai_generator_aws.py` is a drop-in replacement for `ai_generator.py` that uses `boto3` and the Bedrock Converse API instead of the Anthropic SDK. Swap the import in `rag_system.py` and change the constructor call to `AIGenerator(model="us.anthropic.claude-sonnet-4-20250514-v1:0", region="us-east-1")` — no API key needed (uses AWS credential chain).
+`backend/ai_generator_aws.py` is a drop-in replacement for `ai_generator.py` that uses `boto3` and the Bedrock Converse API. To switch, set `AI_PROVIDER=bedrock` (and optionally `AWS_REGION`) in `.env` — `rag_system.py` selects the right generator automatically. No API key needed; uses the AWS credential chain.
