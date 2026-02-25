@@ -218,31 +218,92 @@ header h1 {
     text-align: right;
 }
 
-/* Collapsible Sources */
-.sources-collapsible {
-    margin-top: 0.5rem;
-    font-size: 0.75rem;
+/* Sources Section */
+.sources-section {
+    margin-top: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.sources-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
     color: var(--text-secondary);
-}
-
-.sources-collapsible summary {
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
     user-select: none;
-    font-weight: 500;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
-.sources-collapsible summary:hover {
+.sources-label::-webkit-details-marker {
+    display: none;
+}
+
+.sources-label::before {
+    content: '▶';
+    font-size: 0.6rem;
+    transition: transform 0.2s ease;
+}
+
+.sources-section[open] .sources-label::before {
+    transform: rotate(90deg);
+}
+
+.sources-section[open] .sources-label {
+    margin-bottom: 0.6rem;
+}
+
+.sources-label:hover {
     color: var(--text-primary);
 }
 
-.sources-collapsible[open] summary {
-    margin-bottom: 0.25rem;
+.sources-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
 }
 
-.sources-content {
-    padding: 0 0.5rem 0.25rem 1.5rem;
+.source-chip {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.8rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s, transform 0.1s;
+    background-color: var(--surface-hover);
     color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.source-chip-icon {
+    font-size: 0.75rem;
+    opacity: 0.6;
+}
+
+a.source-chip {
+    background-color: rgba(37, 99, 235, 0.12);
+    color: #93c5fd;
+    border: 1px solid rgba(37, 99, 235, 0.35);
+}
+
+a.source-chip:hover {
+    background-color: rgba(37, 99, 235, 0.28);
+    color: #bfdbfe;
+    border-color: rgba(37, 99, 235, 0.6);
+    transform: translateY(-1px);
+}
+
+a.source-chip:hover .source-chip-icon {
+    opacity: 1;
 }
 
 /* Markdown formatting styles */
