@@ -88,11 +88,16 @@ class VectorStore:
         # Step 3: Search course content
         # Use provided limit or fall back to configured max_results
         search_limit = limit if limit is not None else self.max_results
-        
+
         try:
+            # ChromaDB raises if n_results exceeds the number of items in the
+            # (potentially filtered) collection.  Clamp to the actual count so
+            # we never ask for more results than exist.
+            count = self.course_content.count()
+            safe_limit = min(search_limit, count) if count > 0 else 1
             results = self.course_content.query(
                 query_texts=[query],
-                n_results=search_limit,
+                n_results=safe_limit,
                 where=filter_dict
             )
             return SearchResults.from_chroma(results)

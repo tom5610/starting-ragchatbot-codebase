@@ -14,3 +14,8 @@ dependencies = [
     "python-dotenv==1.1.1",
     "boto3>=1.42.56",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]

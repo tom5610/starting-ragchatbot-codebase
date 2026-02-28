@@ -5,12 +5,14 @@ from typing import List, Optional, Dict, Any
 class AIGenerator:
     """Handles interactions with Claude via Amazon Bedrock Converse API"""
 
+    MAX_ROUNDS = 2
+
     # Static system prompt to avoid rebuilding on each call
     SYSTEM_PROMPT = """ You are an AI assistant specialized in course materials and educational content with access to a comprehensive search tool for course information.
 
 Tool Usage:
 - **get_course_outline**: Use for outline or structure questions (e.g. "what lessons does X have?", "show me the course outline"). Returns the course title, course link, and all lesson numbers and titles.
-- **search_course_content**: Use for questions about specific content or concepts inside a course. **One search per query maximum.**
+- **search_course_content**: Use for questions about specific content or concepts inside a course. You may make up to 2 sequential searches when the first result is insufficient or when the query requires information from two distinct sources (e.g., comparing two courses, or finding a course that covers a topic from a specific lesson). Use a second search only when genuinely needed.
 - Synthesize tool results into accurate, fact-based responses
 - If a tool returns no results, state this clearly without offering alternatives
 
@@ -79,6 +81,8 @@ Provide only the direct answer to what was asked.
     ) -> str:
         """
         Generate AI response with optional tool usage and conversation context.
+        Supports up to MAX_ROUNDS sequential tool-call rounds before forcing a
+        final text-only synthesis call.
 
         Args:
             query: The user's question or request
@@ -95,71 +99,50 @@ Provide only the direct answer to what was asked.
             else self.SYSTEM_PROMPT
         )
 
+        messages = [{"role": "user", "content": [{"text": query}]}]
+
         api_params = {
             **self.base_params,
             "system": [{"text": system_content}],
-            "messages": [{"role": "user", "content": [{"text": query}]}],
+            "messages": messages,
         }
 
         if tools:
             api_params["toolConfig"] = self._convert_tools(tools)
 
-        print("before calling model")
-        response = self.client.converse(**api_params)
-        print("after calling model")
-        print(f"{response=}")
+        for _ in range(self.MAX_ROUNDS):
+            response = self.client.converse(**api_params)
 
-        if response["stopReason"] == "tool_use" and tool_manager:
-            return self._handle_tool_execution(response, api_params, tool_manager)
+            # No tool call or no tool_manager — return text directly
+            if response["stopReason"] != "tool_use" or not tool_manager:
+                return self._extract_text(response)
 
-        return self._extract_text(response)
+            # Append assistant's tool-use turn
+            assistant_message = response["output"]["message"]
+            messages.append(assistant_message)
 
-    def _handle_tool_execution(
-        self, initial_response: Dict, base_params: Dict[str, Any], tool_manager
-    ) -> str:
-        """
-        Handle execution of tool calls and get follow-up response.
+            # Execute all tool_use blocks in this response
+            tool_results = []
+            for block in assistant_message["content"]:
+                if "toolUse" in block:
+                    tool_use = block["toolUse"]
+                    result = tool_manager.execute_tool(tool_use["name"], **tool_use["input"])
+                    tool_results.append({
+                        "toolResult": {
+                            "toolUseId": tool_use["toolUseId"],
+                            "content": [{"text": result}],
+                        }
+                    })
 
-        Args:
-            initial_response: The Bedrock response containing tool use requests
-            base_params: Base API parameters used for the initial call
-            tool_manager: Manager to execute tools
-
-        Returns:
-            Final response text after tool execution
-        """
-        messages = base_params["messages"].copy()
-
-        # Add assistant's tool-use turn to the conversation
-        assistant_message = initial_response["output"]["message"]
-        messages.append(assistant_message)
-
-        # Execute all tool calls and collect results
-        tool_results = []
-        for block in assistant_message["content"]:
-            if "toolUse" in block:
-                tool_use = block["toolUse"]
-                tool_result = tool_manager.execute_tool(
-                    tool_use["name"],
-                    **tool_use["input"],
-                )
-                tool_results.append({
-                    "toolResult": {
-                        "toolUseId": tool_use["toolUseId"],
-                        "content": [{"text": tool_result}],
-                    }
-                })
-
-        if tool_results:
             messages.append({"role": "user", "content": tool_results})
 
-        # Final call — toolConfig must be included because messages contain toolUse/toolResult blocks
+        # Round limit reached — force a final call. toolConfig must be kept because
+        # messages contain toolUse/toolResult blocks (Bedrock rejects calls without it).
         final_params = {
             **self.base_params,
-            "system": base_params["system"],
+            "system": api_params["system"],
             "messages": messages,
-            "toolConfig": base_params["toolConfig"],
+            "toolConfig": api_params["toolConfig"],
         }
-
         final_response = self.client.converse(**final_params)
         return self._extract_text(final_response)
