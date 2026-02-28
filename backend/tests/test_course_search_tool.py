@@ -4,10 +4,10 @@ from unittest.mock import MagicMock
 from search_tools import CourseSearchTool
 from vector_store import SearchResults
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def make_results(docs, metas, distances=None, error=None):
     if error:
@@ -29,6 +29,7 @@ def mock_store():
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_basic_search_returns_formatted_text(mock_store):
     mock_store.search.return_value = make_results(

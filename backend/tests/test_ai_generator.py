@@ -3,19 +3,21 @@ from unittest.mock import MagicMock, patch
 
 from ai_generator import AIGenerator
 
-
 # ---------------------------------------------------------------------------
 # Lightweight stand-ins for Anthropic SDK content blocks
 # ---------------------------------------------------------------------------
 
+
 class ThinkingBlock:
     """Simulates an Anthropic ThinkingBlock — has no .text attribute."""
+
     type = "thinking"
     thinking = "I'm thinking..."
 
 
 class TextBlock:
     """Simulates an Anthropic TextBlock."""
+
     type = "text"
 
     def __init__(self, text: str):
@@ -24,6 +26,7 @@ class TextBlock:
 
 class ToolUseBlock:
     """Simulates an Anthropic ToolUseBlock."""
+
     type = "tool_use"
 
     def __init__(self, id_: str, name: str, input_: dict):
@@ -35,6 +38,7 @@ class ToolUseBlock:
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mock_client():
@@ -49,6 +53,7 @@ def _make_generator(mock_client):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_direct_response_no_tools(mock_client):
     """When stop_reason is end_turn, content text is returned directly."""
@@ -99,7 +104,9 @@ def test_tool_use_triggers_handle_execution(mock_client):
 
 def test_tool_execute_called_with_correct_args(mock_client):
     """tool_manager.execute_tool is called with the tool name and its input args."""
-    tool_block = ToolUseBlock("call_1", "search_course_content", {"query": "lesson 1 content"})
+    tool_block = ToolUseBlock(
+        "call_1", "search_course_content", {"query": "lesson 1 content"}
+    )
     first_response = MagicMock(stop_reason="tool_use", content=[tool_block])
     final_response = MagicMock(stop_reason="end_turn", content=[TextBlock("answer")])
     mock_client.messages.create.side_effect = [first_response, final_response]
@@ -136,7 +143,9 @@ def test_tool_results_included_in_final_messages(mock_client):
         tool_manager=tool_manager,
     )
 
-    final_call_messages = mock_client.messages.create.call_args_list[1].kwargs["messages"]
+    final_call_messages = mock_client.messages.create.call_args_list[1].kwargs[
+        "messages"
+    ]
     last_user_messages = [m for m in final_call_messages if m.get("role") == "user"]
     last_user = last_user_messages[-1]
     assert isinstance(last_user["content"], list)
@@ -150,7 +159,11 @@ def test_final_call_excludes_tools_key(mock_client):
     first_response = MagicMock(stop_reason="tool_use", content=[tool_block1])
     second_response = MagicMock(stop_reason="tool_use", content=[tool_block2])
     final_response = MagicMock(stop_reason="end_turn", content=[TextBlock("answer")])
-    mock_client.messages.create.side_effect = [first_response, second_response, final_response]
+    mock_client.messages.create.side_effect = [
+        first_response,
+        second_response,
+        final_response,
+    ]
 
     tool_manager = MagicMock()
     tool_manager.execute_tool.return_value = "content"
@@ -195,7 +208,9 @@ def test_multiple_tool_calls_all_executed(mock_client):
     tool1 = ToolUseBlock("call_1", "search_course_content", {"query": "python"})
     tool2 = ToolUseBlock("call_2", "search_course_content", {"query": "django"})
     first_response = MagicMock(stop_reason="tool_use", content=[tool1, tool2])
-    final_response = MagicMock(stop_reason="end_turn", content=[TextBlock("Combined answer")])
+    final_response = MagicMock(
+        stop_reason="end_turn", content=[TextBlock("Combined answer")]
+    )
     mock_client.messages.create.side_effect = [first_response, final_response]
 
     tool_manager = MagicMock()

@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 # Fixture
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def rag_bundle():
     """RAGSystem with its AI generator and vector store mocked out."""
@@ -15,9 +16,11 @@ def rag_bundle():
     mock_gen.generate_response.return_value = "Mocked AI response"
     mock_gen_cls = MagicMock(return_value=mock_gen)
 
-    with patch("rag_system.AIGenerator", mock_gen_cls), \
-         patch("rag_system.VectorStore"), \
-         patch("rag_system.DocumentProcessor"):
+    with (
+        patch("rag_system.AIGenerator", mock_gen_cls),
+        patch("rag_system.VectorStore"),
+        patch("rag_system.DocumentProcessor"),
+    ):
 
         from config import Config
         from rag_system import RAGSystem
@@ -31,6 +34,7 @@ def rag_bundle():
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_query_returns_tuple_response_sources(rag_bundle):
     rag, _ = rag_bundle
