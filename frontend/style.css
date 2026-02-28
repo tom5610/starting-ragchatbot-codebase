@@ -799,3 +799,122 @@ details[open] .suggested-header::before {
         width: 280px;
     }
 }
+
+/* ============================================================
+   LIGHT THEME
+   ============================================================ */
+
+[data-theme="light"] {
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --surface-hover: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --border-color: #e2e8f0;
+    --assistant-message: #f1f5f9;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --focus-ring: rgba(37, 99, 235, 0.15);
+    --welcome-bg: #eff6ff;
+    --welcome-border: #2563eb;
+}
+
+/* Overrides for hardcoded rgba values in light theme */
+[data-theme="light"] .sources-section {
+    background: rgba(226, 232, 240, 0.5);
+}
+
+[data-theme="light"] a.source-chip {
+    background-color: rgba(37, 99, 235, 0.08);
+    color: #1d4ed8;
+    border-color: rgba(37, 99, 235, 0.25);
+}
+
+[data-theme="light"] a.source-chip:hover {
+    background-color: rgba(37, 99, 235, 0.15);
+    color: #1e40af;
+    border-color: rgba(37, 99, 235, 0.5);
+}
+
+[data-theme="light"] .message-content code {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .message-content pre {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Smooth transitions for theme switching */
+body,
+.sidebar,
+.main-content,
+.chat-main,
+.chat-container,
+.chat-messages,
+.chat-input-container,
+.message-content,
+.sources-section,
+.stat-item {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ============================================================
+   THEME TOGGLE BUTTON
+   ============================================================ */
+
+.theme-toggle {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    box-shadow: var(--shadow);
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-toggle:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    transform: scale(1.08);
+}
+
+.theme-toggle:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+    position: absolute;
+    transition: opacity 0.25s ease, transform 0.3s ease;
+}
+
+/* Dark theme (default): show sun, hide moon */
+.theme-toggle .icon-sun {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}
+
+.theme-toggle .icon-moon {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+}
+
+/* Light theme: show moon, hide sun */
+[data-theme="light"] .theme-toggle .icon-sun {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+}
+
+[data-theme="light"] .theme-toggle .icon-moon {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+}

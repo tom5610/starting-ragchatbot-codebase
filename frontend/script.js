@@ -19,6 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
     createNewSession();
     loadCourseStats();
+
+    // Sync aria-label with the theme set by the inline script
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+    document.getElementById('themeToggle').setAttribute(
+        'aria-label',
+        currentTheme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+    );
 });
 
 // Event Listeners
@@ -28,8 +35,8 @@ function setupEventListeners() {
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') sendMessage();
     });
-    
-    
+
+
     // New chat button
     document.getElementById('newChatButton').addEventListener('click', createNewSession);
 
@@ -41,6 +48,21 @@ function setupEventListeners() {
             sendMessage();
         });
     });
+
+    // Theme toggle
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+}
+
+// Theme Functions
+function toggleTheme() {
+    const current = document.documentElement.getAttribute('data-theme') || 'dark';
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+    document.getElementById('themeToggle').setAttribute(
+        'aria-label',
+        next === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
+    );
 }
 
 
