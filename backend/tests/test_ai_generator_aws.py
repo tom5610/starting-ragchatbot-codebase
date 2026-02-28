@@ -3,10 +3,10 @@ from unittest.mock import MagicMock, patch
 
 from ai_generator_aws import AIGenerator
 
-
 # ---------------------------------------------------------------------------
 # Helpers — minimal Bedrock response structures
 # ---------------------------------------------------------------------------
+
 
 def bedrock_text_response(text: str) -> dict:
     return {
@@ -22,7 +22,13 @@ def bedrock_tool_use_response(tool_use_id: str, name: str, input_: dict) -> dict
             "message": {
                 "role": "assistant",
                 "content": [
-                    {"toolUse": {"toolUseId": tool_use_id, "name": name, "input": input_}}
+                    {
+                        "toolUse": {
+                            "toolUseId": tool_use_id,
+                            "name": name,
+                            "input": input_,
+                        }
+                    }
                 ],
             }
         },
@@ -32,6 +38,7 @@ def bedrock_tool_use_response(tool_use_id: str, name: str, input_: dict) -> dict
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mock_boto_client():
@@ -46,6 +53,7 @@ def _make_generator(mock_boto_client):
 # ---------------------------------------------------------------------------
 # Tests
 # ---------------------------------------------------------------------------
+
 
 def test_convert_tools_format(mock_boto_client):
     """Anthropic-format tools are correctly converted to Bedrock toolConfig."""
@@ -74,7 +82,9 @@ def test_convert_tools_format(mock_boto_client):
 
 def test_tool_use_triggers_handle_execution(mock_boto_client):
     """Bedrock stopReason == tool_use triggers _handle_tool_execution."""
-    first = bedrock_tool_use_response("call_1", "search_course_content", {"query": "python"})
+    first = bedrock_tool_use_response(
+        "call_1", "search_course_content", {"query": "python"}
+    )
     final = bedrock_text_response("Final answer")
     mock_boto_client.converse.side_effect = [first, final]
 
@@ -100,8 +110,12 @@ def test_tool_use_triggers_handle_execution(mock_boto_client):
 
 def test_toolconfig_included_in_final_call(mock_boto_client):
     """toolConfig must be present in all 3 calls including the forced-final after 2 rounds."""
-    first = bedrock_tool_use_response("call_1", "search_course_content", {"query": "python"})
-    second = bedrock_tool_use_response("call_2", "search_course_content", {"query": "django"})
+    first = bedrock_tool_use_response(
+        "call_1", "search_course_content", {"query": "python"}
+    )
+    second = bedrock_tool_use_response(
+        "call_2", "search_course_content", {"query": "django"}
+    )
     final = bedrock_text_response("Final answer")
     mock_boto_client.converse.side_effect = [first, second, final]
 
@@ -130,19 +144,15 @@ def test_toolconfig_included_in_final_call(mock_boto_client):
 def test_extract_text_from_bedrock_response(mock_boto_client):
     """_extract_text correctly pulls the text value from a Bedrock response dict."""
     gen = _make_generator(mock_boto_client)
-    response = {
-        "output": {
-            "message": {
-                "content": [{"text": "Hello from Bedrock"}]
-            }
-        }
-    }
+    response = {"output": {"message": {"content": [{"text": "Hello from Bedrock"}]}}}
     assert gen._extract_text(response) == "Hello from Bedrock"
 
 
 def test_bedrock_tool_results_format(mock_boto_client):
     """Tool results sent back to Bedrock use toolResult / toolUseId format."""
-    first = bedrock_tool_use_response("call_1", "search_course_content", {"query": "python"})
+    first = bedrock_tool_use_response(
+        "call_1", "search_course_content", {"query": "python"}
+    )
     final = bedrock_text_response("Answer")
     mock_boto_client.converse.side_effect = [first, final]
 
@@ -168,7 +178,9 @@ def test_bedrock_tool_results_format(mock_boto_client):
     last_user = user_messages[-1]
     # Each tool result block must use Bedrock's toolResult key
     assert any("toolResult" in item for item in last_user["content"])
-    tool_result_block = next(item["toolResult"] for item in last_user["content"] if "toolResult" in item)
+    tool_result_block = next(
+        item["toolResult"] for item in last_user["content"] if "toolResult" in item
+    )
     assert tool_result_block["toolUseId"] == "call_1"
 
 
@@ -183,8 +195,12 @@ _TOOLS = [
 
 def test_bedrock_two_round_makes_three_converse_calls(mock_boto_client):
     """Two tool-use rounds followed by end_turn results in exactly 3 converse calls."""
-    r1 = bedrock_tool_use_response("call_1", "search_course_content", {"query": "first"})
-    r2 = bedrock_tool_use_response("call_2", "search_course_content", {"query": "second"})
+    r1 = bedrock_tool_use_response(
+        "call_1", "search_course_content", {"query": "first"}
+    )
+    r2 = bedrock_tool_use_response(
+        "call_2", "search_course_content", {"query": "second"}
+    )
     r3 = bedrock_text_response("Final answer")
     mock_boto_client.converse.side_effect = [r1, r2, r3]
 
@@ -192,7 +208,9 @@ def test_bedrock_two_round_makes_three_converse_calls(mock_boto_client):
     tool_manager.execute_tool.return_value = "result"
 
     gen = _make_generator(mock_boto_client)
-    result = gen.generate_response(query="complex question", tools=_TOOLS, tool_manager=tool_manager)
+    result = gen.generate_response(
+        query="complex question", tools=_TOOLS, tool_manager=tool_manager
+    )
 
     assert mock_boto_client.converse.call_count == 3
     assert result == "Final answer"
@@ -200,8 +218,12 @@ def test_bedrock_two_round_makes_three_converse_calls(mock_boto_client):
 
 def test_bedrock_two_rounds_execute_tools_twice(mock_boto_client):
     """execute_tool is called once per round — twice for a 2-round sequence."""
-    r1 = bedrock_tool_use_response("call_1", "search_course_content", {"query": "first"})
-    r2 = bedrock_tool_use_response("call_2", "search_course_content", {"query": "second"})
+    r1 = bedrock_tool_use_response(
+        "call_1", "search_course_content", {"query": "first"}
+    )
+    r2 = bedrock_tool_use_response(
+        "call_2", "search_course_content", {"query": "second"}
+    )
     r3 = bedrock_text_response("Final answer")
     mock_boto_client.converse.side_effect = [r1, r2, r3]
 
@@ -209,15 +231,21 @@ def test_bedrock_two_rounds_execute_tools_twice(mock_boto_client):
     tool_manager.execute_tool.return_value = "result"
 
     gen = _make_generator(mock_boto_client)
-    gen.generate_response(query="complex question", tools=_TOOLS, tool_manager=tool_manager)
+    gen.generate_response(
+        query="complex question", tools=_TOOLS, tool_manager=tool_manager
+    )
 
     assert tool_manager.execute_tool.call_count == 2
 
 
 def test_bedrock_toolconfig_present_in_forced_final(mock_boto_client):
     """toolConfig must be present in the forced-final call after 2 tool-use rounds."""
-    r1 = bedrock_tool_use_response("call_1", "search_course_content", {"query": "first"})
-    r2 = bedrock_tool_use_response("call_2", "search_course_content", {"query": "second"})
+    r1 = bedrock_tool_use_response(
+        "call_1", "search_course_content", {"query": "first"}
+    )
+    r2 = bedrock_tool_use_response(
+        "call_2", "search_course_content", {"query": "second"}
+    )
     r3 = bedrock_text_response("answer")
     mock_boto_client.converse.side_effect = [r1, r2, r3]
 
@@ -232,8 +260,12 @@ def test_bedrock_toolconfig_present_in_forced_final(mock_boto_client):
 
 def test_bedrock_message_history_structure_after_two_rounds(mock_boto_client):
     """Forced-final call receives 5 messages with correct Bedrock structure."""
-    r1 = bedrock_tool_use_response("call_1", "search_course_content", {"query": "first"})
-    r2 = bedrock_tool_use_response("call_2", "search_course_content", {"query": "second"})
+    r1 = bedrock_tool_use_response(
+        "call_1", "search_course_content", {"query": "first"}
+    )
+    r2 = bedrock_tool_use_response(
+        "call_2", "search_course_content", {"query": "second"}
+    )
     r3 = bedrock_text_response("answer")
     mock_boto_client.converse.side_effect = [r1, r2, r3]
 
@@ -262,7 +294,9 @@ def test_bedrock_single_round_returns_text_without_forced_final(mock_boto_client
     tool_manager.execute_tool.return_value = "result"
 
     gen = _make_generator(mock_boto_client)
-    result = gen.generate_response(query="question", tools=_TOOLS, tool_manager=tool_manager)
+    result = gen.generate_response(
+        query="question", tools=_TOOLS, tool_manager=tool_manager
+    )
 
     assert mock_boto_client.converse.call_count == 2
     assert result == "Direct answer"

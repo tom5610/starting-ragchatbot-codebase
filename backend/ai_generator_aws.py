@@ -126,13 +126,17 @@ Provide only the direct answer to what was asked.
             for block in assistant_message["content"]:
                 if "toolUse" in block:
                     tool_use = block["toolUse"]
-                    result = tool_manager.execute_tool(tool_use["name"], **tool_use["input"])
-                    tool_results.append({
-                        "toolResult": {
-                            "toolUseId": tool_use["toolUseId"],
-                            "content": [{"text": result}],
+                    result = tool_manager.execute_tool(
+                        tool_use["name"], **tool_use["input"]
+                    )
+                    tool_results.append(
+                        {
+                            "toolResult": {
+                                "toolUseId": tool_use["toolUseId"],
+                                "content": [{"text": result}],
+                            }
                         }
-                    })
+                    )
 
             messages.append({"role": "user", "content": tool_results})
 
